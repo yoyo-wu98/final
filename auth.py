@@ -17,23 +17,23 @@ from itsdangerous import SignatureExpired
 from itsdangerous import BadSignature
 
 
-Base = declarative_base()
+# Base = declarative_base()
 
-engin = create_engine('mysql+pymysql://root:Zhj2323864743@127.0.0.1:3306/final')
-DBsession = sessionmaker(bind=engin)
+# engin = create_engine('mysql+pymysql://root:Zhj2323864743@127.0.0.1:3306/final')
+# DBsession = sessionmaker(bind=engin)
 
 bp = Blueprint("mul",__name__,url_prefix="/auth")
 
 myauth = HTTPTokenAuth()
 
-class auth(Base):
-    __tablename__ = "user_tbl"
+# class auth(Base):
+#     __tablename__ = "user_tbl"
 
-    user_id = Column(String(40),primary_key=True)
-    passwd = Column(String(40))
-    money = Column(Integer)
-    terminal = Column(String(30))
-    token = Column(String(50))
+#     user_id = Column(String(40),primary_key=True)
+#     passwd = Column(String(40))
+#     money = Column(Integer)
+#     terminal = Column(String(30))
+
 
 def createToken(user_id):
     '''

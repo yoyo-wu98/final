@@ -13,5 +13,3 @@ import datetime
 
 from .. import config
 import seller_init
-import seller_api
-
