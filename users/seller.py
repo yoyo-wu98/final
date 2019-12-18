@@ -13,24 +13,32 @@ import datetime
 
 from .. import Auth as auth
 
-Base = declarative_base()
+# Base = declarative_base()
+
+# engine = create_engine(
+#     'mysql+pymysql://root:Zhj2323864743@127.0.0.1:3306/final')
+# DBsession = sessionmaker(bind=engine)
+# session_ = DBsession()
 
 
-class Market(Base):
-    __tablename__ = 'market'
-    user_id = Column(Integer, ForeignKey(
-        'users.username'), nullable=False)
-    store_id = Column(Integer, nullable=False, primary_key=True, index=True)
-    # __dict__ = {"owner_name": owner_name, "item_id": item_id}
+# class Market(Base):
+#     __tablename__ = 'market'
+#     user_id = Column(Integer, ForeignKey(
+#         'users.username'), nullable=False)
+#     store_id = Column(Integer, nullable=False, primary_key=True, index=True)
+#     # __dict__ = {"owner_name": owner_name, "item_id": item_id}
 
-    def __repr__(self):
-        return "store_id: %d, user_id: %d" % (
-            self.store_id, self.user_id)
+#     def __repr__(self):
+#         return "store_id: %d, user_id: %d" % (
+#             self.store_id, self.user_id)
 
-    # def __init__(self, item_id, owner_name):
-    # 	self.item_id = item_id
-    # 	self.owner_name = owner_name
-    # 	self.__dict__ = {"owner_name": self.owner_name, "item_id": self.item_id}
+#     # def __init__(self, item_id, owner_name):
+#     # 	self.item_id = item_id
+#     # 	self.owner_name = owner_name
+#     # 	self.__dict__ = {"owner_name": self.owner_name, "item_id": self.item_id}
+
+
+bp = Blueprint("seller", __name__, url_prefix="/seller")
 
 
 '''
@@ -38,16 +46,6 @@ class Market(Base):
 1. 判断token是否过期，过期返回失败，否则继续；
 2. 查看seller_id和store_id是否已经存在，存在则返回‘失败，已有’，没有则继续；
 '''
-engine = create_engine(
-    'mysql+pymysql://root:Zhj2323864743@127.0.0.1:3306/final')
-DBsession = sessionmaker(bind=engine)
-session_ = DBsession()
-
-bp = Blueprint("seller", __name__, url_prefix="/seller")
-
-
-def init_market_():
-    Base.metadata.create_all(engine)
 
 
 @seller.route("/create_store", methods=['POST'])
@@ -55,8 +53,12 @@ def create_market():
     if auth.verify_token() == False:
         return
     if request.method == 'POST':
-        user_id = request.json.get("user_id")
-        store_id = request.json.get("store_id")
+        data = request.get_data()
+        data = json.loads(data)
+        user_id = data['user_id']
+        store_id = data['store_id']
+        # user_id = request.json.get("user_id")
+        # store_id = request.json.get("store_id")
 
         if user_id == "" or store_id == "":
             return jsonify({"code": 502, "message": "参数错误，user_id和store_id不能为空。"})
@@ -110,5 +112,5 @@ def add_market(user_id, store_id):
 
 
 @seller.route("/add_book", methods=['POST'])
-def sdd_book():
-    return 0
+def add_book():
+    return
