@@ -1,5 +1,6 @@
 from flask import Flask
 import Auth
+from .users import seller
 
 if __name__ == "__main__":
     app = Flask(__name__)
