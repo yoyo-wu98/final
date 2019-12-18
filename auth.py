@@ -15,7 +15,7 @@ from sqlalchemy.ext.declarative import declarative_base
 import sqlalchemy
 from itsdangerous import SignatureExpired
 from itsdangerous import BadSignature
-
+from .ini_db import db
 
 # Base = declarative_base()
 
@@ -52,8 +52,8 @@ def verify_token(user_id ,token):
     2.其次检查token是否为空,如果为空,则说明已经登出
     3.随后检验token的正确性和已经是否过期
     '''
-    session = DBsession()
-    user =session.query(auth).filter(auth.user_id==user_id).first()
+    session = db.DBsession()
+    user =session.query(db.auth).filter(db.auth.user_id==user_id).first()
     #user id是否出错
     if user is None:
         session.close()
@@ -99,8 +99,8 @@ def doRigister(user_id,password):
         code = 101
         msg = "用户名或密码为空"
         return code, msg
-    session = DBsession()
-    newUser = auth(user_id=user_id,passwd=password,money=0)
+    session = db.DBsession()
+    newUser = db.auth(user_id=user_id,passwd=password,money=0)
     try:
         #向数据控发送回话,commit必须加在try中,因为这一步是真正意义上的修改数据库
         session.add(newUser)
@@ -134,9 +134,9 @@ def doUnregister(user_id,password):
     1. 存在则返回成功
     2. 失败则返回用户名或者密码错误
     '''
-    session = DBsession()
+    session = db.DBsession()
     try:
-        user = session.query(auth).filter(auth.user_id==user_id,auth.passwd==password).first()
+        user = session.query(db.auth).filter(db.auth.user_id==user_id,db.auth.passwd==password).first()
         session.delete(user)
         session.commit()
     except sqlalchemy.orm.exc.UnmappedInstanceError:
@@ -167,8 +167,8 @@ def doLogin(user_id,password):
     1. 没有, 返回401并报错,token为None型
     2. 有, 返回200并显示成功,创建相应token,并且在后端存储token
     '''
-    session = DBsession()
-    user = session.query(auth).filter(auth.user_id==user_id,auth.passwd==password).first()
+    session = db.DBsession()
+    user = session.query(db.auth).filter(db.auth.user_id==user_id,db.auth.passwd==password).first()
     if user is None:
         code = 401
         msg = "登陆失败,用户名或密码错误"
@@ -202,9 +202,9 @@ def doChangePassword(user_id,oldPasswd,newPasswd):
     1.匹配且存在:直接修改,返回200和成功信息
     2.不满足条件:返回401和报错信息
     '''
-    session = DBsession()
+    session = db.DBsession()
     try:
-        user = session.query(auth).filter(auth.user_id==user_id,auth.passwd==oldPasswd).first()
+        user = session.query(db.auth).filter(db.auth.user_id==user_id,db.auth.passwd==oldPasswd).first()
         user.passwd = newPasswd
         session.commit()
     except AttributeError:
@@ -248,8 +248,8 @@ def doLogout(user_id):
     #将token置为空
     code = 200
     msg = "登出成功"
-    session = DBsession()
-    user =session.query(auth).filter(auth.user_id==user_id).first()
+    session = db.DBsession()
+    user =session.query(db.auth).filter(db.auth.user_id==user_id).first()
     user.token = ""
     session.commit()
     session.close()
