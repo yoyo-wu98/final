@@ -24,7 +24,6 @@ from itsdangerous import BadSignature
 
 bp = Blueprint("mul", __name__, url_prefix="/auth")
 
-myauth = HTTPTokenAuth()
 
 # class auth(Base):
 #     __tablename__ = "user_tbl"
@@ -103,21 +102,23 @@ def doRigister(user_id, password):
         msg = "用户名或密码为空"
         return code, msg
     session = DBsession()
-    newUser = auth(user_id=user_id, passwd=password, money=0)
+
+    newUser = auth(user_id=user_id, passwd=password,
+                   money=0)  # TODO: conflict with default
     try:
         # 向数据控发送回话,commit必须加在try中,因为这一步是真正意义上的修改数据库
+
         session.add(newUser)
-        session.commit()
-    except sqlalchemy.exc.IntegrityError:
+    except:
         code = 501
         msg = "注册失败,用户名重复"
         session.close()
         return code, msg
-    else:
-        code = 200
-        msg = "注册成功"
-        session.close()
-        return code, msg
+    code = 200
+    msg = "注册成功"
+    session.commit()
+    session.close()
+    return code, msg
 
 # 注销用户路由
 @bp.route("/unregister", methods=['POST'])
