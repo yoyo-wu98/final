@@ -54,7 +54,7 @@ def create_market():
         return
     if request.method == 'POST':
         data = request.get_data()
-        data = json.loads(data)
+        data = json.loads(data)  # TODO: verify whether this work
         user_id = data['user_id']
         store_id = data['store_id']
         # user_id = request.json.get("user_id")
