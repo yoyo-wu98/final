@@ -1,4 +1,4 @@
-#flask 框架部分,用于前段交互
+  #flask 框架部分,用于前段交互
 from flask import Blueprint
 from flask import request
 from flask import jsonify
@@ -33,6 +33,7 @@ class auth(Base):
     passwd = Column(String(40))
     money = Column(Integer)
     terminal = Column(String(30))
+    token = Column(String(50))
 
 def createToken(user_id):
     '''
@@ -45,8 +46,24 @@ def createToken(user_id):
     token_generator = Serializer("secret", expires_in=MAX_TOKEN_AGE)
     token = token_generator.dumps({"user_id":user_id})
     return token
-def verify_token(token):
+def verify_token(user_id ,token):
+    '''
+    1.首先检查user_id是否有错
+    2.其次检查token是否为空,如果为空,则说明已经登出
+    3.随后检验token的正确性和已经是否过期
+    '''
+    session = DBsession()
+    user =session.query(auth).filter(auth.user_id==user_id).first()
+    #user id是否出错
+    if user is None:
+        session.close()
+        return False
+    #是否已经登出
+    if user.token=="":
+        session.close()
+        return False
     s = Serializer("secret",expires_in=3600)
+    #判断是否过期或者错误
     try:
         s.loads(token)
     except SignatureExpired:
@@ -148,7 +165,7 @@ def doLogin(user_id,password):
     登陆函数逻辑:
     查找在db中是否有匹配的user_id和密码:
     1. 没有, 返回401并报错,token为None型
-    2. 有, 返回200并显示成功,创建相应token
+    2. 有, 返回200并显示成功,创建相应token,并且在后端存储token
     '''
     session = DBsession()
     user = session.query(auth).filter(auth.user_id==user_id,auth.passwd==password).first()
@@ -161,6 +178,9 @@ def doLogin(user_id,password):
         code =200
         msg = "登陆成功"
         token = createToken(user_id=user_id)
+        user.token = token
+        session.commit()
+        session.close()
         return code, msg, token
     
 
@@ -173,7 +193,6 @@ def password():
         oldPassword = request.json.get("oldPassword")
         newPassword = request.json.get("newPassword")
         code, msg = doChangePassword(user_id,oldPassword,newPassword)
-
         return jsonify({"code":code,"msg":msg})
 
 def doChangePassword(user_id,oldPasswd,newPasswd):
@@ -204,15 +223,21 @@ def doChangePassword(user_id,oldPasswd,newPasswd):
 
 @bp.route("/logout",methods=['POST'])
 def logout():
+    '''
+    登出操作逻辑:
+    1. 判断token是否过关
+    2. 过关则执行退出操作
+    '''
     if request.method=='POST':
         user_id = request.json.get("user_id")
         #首先从headers中获取token的值
         token = request.headers["token"]
         #校验token是否正确
-        ifVerified = verify_token(token)
+        ifVerified = verify_token(user_id,token)
         #如果正确,执行登出操作
         if ifVerified:
             code,msg = doLogout(user_id)
+            return jsonify({"code":code,"message":msg})
         #不正确,返回报错
         else:
             code = 401
@@ -220,20 +245,14 @@ def logout():
         return jsonify({"code":code,"message":msg})
 
 def doLogout(user_id):
-    #查询是否存在这个用户
+    #将token置为空
+    code = 200
+    msg = "登出成功"
     session = DBsession()
     user =session.query(auth).filter(auth.user_id==user_id).first()
-    #如果不存在,返回报错
-    if user is None:
-        code = 401
-        msg = "登出失败,用户名或者token错误"
-        session.close()
-        return code,msg
-    #否则返回成功
-    else:
-        code = 200
-        msg = "登出成功"
-        session.close()
-        return code,msg
+    user.token = ""
+    session.commit()
+    session.close()
+    return code,msg
 
 
