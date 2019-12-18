@@ -5,6 +5,7 @@ from flask import jsonify
 from flask import current_app
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask_httpauth import HTTPTokenAuth
+import functools
 
 #数据库操作部分
 from sqlalchemy import Column, String, Integer, ForeignKey, create_engine,PrimaryKeyConstraint,and_
@@ -39,32 +40,29 @@ def createToken(user_id):
     para user_id : 用户id
     返回一个token
     '''
-    #生成一个10min内都有效的token
-    MAX_TOKEN_AGE=6000
+    #生成一个6min内都有效的token
+    MAX_TOKEN_AGE=3600
     token_generator = Serializer("secret", expires_in=MAX_TOKEN_AGE)
     token = token_generator.dumps({"user_id":user_id})
     return token
-
-@myauth.verify_token
 def verify_token(token):
-    s = Serializer("secret")
+    s = Serializer("secret",expires_in=3600)
     try:
-        data = s.loads(token)
+        s.loads(token)
     except SignatureExpired:
-        #token过期了
+        #过期
         return False
     except BadSignature:
         #token错误
         return False
     return True
 
-
 #登陆函数路由
 @bp.route("/register",methods=['POST'])
 def register():
     if request.method=='POST':
         #从post body中获取请求
-        user_id =  request.json.get("user_id")
+        user_id  = request.json.get("user_id")
         password = request.json.get("password")
         #执行插入请求
         code,msg = doRigister(user_id=user_id,password=password)
@@ -168,7 +166,7 @@ def doLogin(user_id,password):
 
 
 #用户更改密码路由
-@bp.route("/password")
+@bp.route("/password",methods=['POST'])
 def password():
     if request.method=='POST':
         user_id =  request.json.get("user_id")
@@ -187,14 +185,55 @@ def doChangePassword(user_id,oldPasswd,newPasswd):
     '''
     session = DBsession()
     try:
-        user = session.query(auth).filter(auth.user_id==user_id,auth.passwd==password).first()
+        user = session.query(auth).filter(auth.user_id==user_id,auth.passwd==oldPasswd).first()
         user.passwd = newPasswd
         session.commit()
-    except sqlalchemy.orm.exc.UnmappedInstanceError:
+    except AttributeError:
+        session.close()
         code = 401
         msg = "更改密码失败,用户名或密码错误"
         return code,msg
     else:
         code = 200
         msg = "更改密码成功"
+        session.close()
         return code, msg
+
+
+#用户登出的路由
+
+@bp.route("/logout",methods=['POST'])
+def logout():
+    if request.method=='POST':
+        user_id = request.json.get("user_id")
+        #首先从headers中获取token的值
+        token = request.headers["token"]
+        #校验token是否正确
+        ifVerified = verify_token(token)
+        #如果正确,执行登出操作
+        if ifVerified:
+            code,msg = doLogout(user_id)
+        #不正确,返回报错
+        else:
+            code = 401
+            msg = "登出失败,用户名或者token错误"
+        return jsonify({"code":code,"message":msg})
+
+def doLogout(user_id):
+    #查询是否存在这个用户
+    session = DBsession()
+    user =session.query(auth).filter(auth.user_id==user_id).first()
+    #如果不存在,返回报错
+    if user is None:
+        code = 401
+        msg = "登出失败,用户名或者token错误"
+        session.close()
+        return code,msg
+    #否则返回成功
+    else:
+        code = 200
+        msg = "登出成功"
+        session.close()
+        return code,msg
+
+

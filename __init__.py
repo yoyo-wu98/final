@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-
 from flask import Flask
-from . import Auth
-from .users import *
-
+import Auth
 
 if __name__== "__main__":
     app = Flask(__name__)
