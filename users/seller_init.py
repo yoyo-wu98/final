@@ -45,25 +45,6 @@ bp = Blueprint("seller",__name__,url_prefix="/seller")
 
 def init_market_():
 	Base.metadata.create_all(engine)
-	# # insert the users
-	# f_users = open(
-    #         r"db\user_material.csv", "r+")
-	# lines_users = f_users.readlines()
-	# temp_users = []
-	# for i in lines_users:
-	# 	temp_users.append(i.split())
-	# f_users.close()
-	# print(utils.create_user(temp_users))
-	# # insert the items
-	# f_items = open(
-	# 	r"db\item_material.csv", "r+")
-	# lines_items = f_items.readlines()
-	# temp_items = []
-	# for i in lines_items:
-	# 	i = i.split()[0]
-	# 	temp_items.append(i)
-	# f_items.close()
-	# print(utils.create_item(temp_items))
 
 @seller.route("/create_store", methods=['POST'])
 def create_market():
