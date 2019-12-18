@@ -11,32 +11,9 @@ from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 import datetime
 
+from ..ini_db import db
 from .. import Auth as auth
-
-# Base = declarative_base()
-
-# engine = create_engine(
-#     'mysql+pymysql://root:Zhj2323864743@127.0.0.1:3306/final')
-# DBsession = sessionmaker(bind=engine)
-# session_ = DBsession()
-
-
-# class Market(Base):
-#     __tablename__ = 'market'
-#     user_id = Column(Integer, ForeignKey(
-#         'users.username'), nullable=False)
-#     store_id = Column(Integer, nullable=False, primary_key=True, index=True)
-#     # __dict__ = {"owner_name": owner_name, "item_id": item_id}
-
-#     def __repr__(self):
-#         return "store_id: %d, user_id: %d" % (
-#             self.store_id, self.user_id)
-
-#     # def __init__(self, item_id, owner_name):
-#     # 	self.item_id = item_id
-#     # 	self.owner_name = owner_name
-#     # 	self.__dict__ = {"owner_name": self.owner_name, "item_id": self.item_id}
-
+from .. import config
 
 bp = Blueprint("seller", __name__, url_prefix="/seller")
 
@@ -53,12 +30,12 @@ def create_market():
     if auth.verify_token() == False:
         return
     if request.method == 'POST':
-        data = request.get_data()
-        data = json.loads(data)  # TODO: verify whether this work
-        user_id = data['user_id']
-        store_id = data['store_id']
-        # user_id = request.json.get("user_id")
-        # store_id = request.json.get("store_id")
+        # data = request.get_data()
+        # data = json.loads(data)  # TODO: verify whether this work - doesn't work
+        # user_id = data['user_id']
+        # store_id = data['store_id']
+        user_id = request.json.get("user_id")
+        store_id = request.json.get("store_id")
 
         if user_id == "" or store_id == "":
             return jsonify({"code": 502, "message": "参数错误，user_id和store_id不能为空。"})
@@ -77,9 +54,11 @@ def create_market():
 
 def find_market(user_id, store_id):
     element = None
+    session = db.DBsession()
     try:
-        element = session_.query(Market).filter(
-            Market.user_id == user_id, Market.store_id == store_id).one()
+        element = session.query(db.Market).filter(
+            db.Market.user_id == user_id, db.Market.store_id == store_id).one()
+        session.close()
     except ZeroDivisionError as e:
         print("发生错误: ", e)
         return 401, "发生错误: " + e
@@ -91,7 +70,7 @@ def find_market(user_id, store_id):
 
 
 def add_market(user_id, store_id):
-    newcolumn = Market(
+    newcolumn = db.Market(
         user_id=user_id, store_id=store_id)
     try:
         session_.add(newcolumn)
