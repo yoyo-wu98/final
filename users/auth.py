@@ -27,7 +27,6 @@ from ini_db import db
 bp = Blueprint("mul", __name__, url_prefix="/auth")
 
 
-
 def createToken(user_id):
     '''
     生成一个token
@@ -43,7 +42,7 @@ def createToken(user_id):
 
 def verify_token(user_id, token):
     '''
-    1.首先检查user_id是否有错
+    1.首先检查user_id是否有错
     2.其次检查token是否为空,如果为空,则说明已经登出
     3.随后检验token的正确性和已经是否过期
     '''
