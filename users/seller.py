@@ -7,12 +7,11 @@ from sqlalchemy.sql.schema import CheckConstraint
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.session import sessionmaker
-from sqlalchemy_utils import database_exists, create_database
+
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 import datetime
 
 from ini_db import db
-import auth
 from conf import conf
 
 seller = Blueprint("seller", __name__, url_prefix="/seller")
@@ -27,7 +26,7 @@ seller = Blueprint("seller", __name__, url_prefix="/seller")
 
 @seller.route("/create_store", methods=['POST'])
 def create_market():
-    if auth.verify_token() == False:
+    if db.auth.verify_token() == False:
         return 401, "登陆失败。"  # TODO: 需要修改，等一波邹哥哥的函数
     if request.method == 'POST':
         user_id = request.json.get("user_id")
@@ -90,7 +89,7 @@ def add_market(user_id, store_id):
 # TODO: Need to initialize the book table
 @seller.route("/add_book", methods=['POST'])  # TODO: 需要重新考虑很多东西
 def add_book():
-    if auth.verify_token() == False:
+    if db.auth.verify_token() == False:
         return 401, "登陆失败。"  # TODO: 需要修改，等一波邹哥哥的函数
     if request.method == 'POST':
         user_id = request.json.get("user_id")
@@ -165,7 +164,7 @@ def add_book_to_store(book_id, store_id, stock):
 # TODO: Need to initialize the book table
 @seller.route("/add_stock_level", methods=['POST'])  # TODO: 需要重新考虑很多东西
 def add_stock_level():
-    if auth.verify_token() == False:
+    if db.auth.verify_token() == False:
         return 401, "登陆失败。"  # TODO: 需要修改，等一波邹哥哥的函数
     if request.method == 'POST':
         user_id = request.json.get("user_id")

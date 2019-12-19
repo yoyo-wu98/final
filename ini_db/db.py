@@ -4,7 +4,6 @@ from flask import request
 from flask import jsonify
 from flask import current_app
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flask_httpauth import HTTPTokenAuth
 
 # 数据库操作部分
 # # SQL
@@ -13,7 +12,6 @@ from sqlalchemy.sql.schema import CheckConstraint
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy_utils import database_exists, create_database
 
 # # MongoDB
 import pymongo
@@ -40,9 +38,9 @@ DBsession = sessionmaker(bind=engine)
 
 session_ = DBsession()
 
-# bp = Blueprint("mul", __name__, url_prefix="/auth")
+# bp = Blueprint("mul", __name__, url_prefix="/db.auth")
 
-# myauth = HTTPTokenAuth()
+# mydb.auth = HTTPTokendb.auth()
 
 
 class auth(Base):
@@ -76,6 +74,8 @@ class Market(Base):
     # 	self.__dict__ = {"owner_name": self.owner_name, "item_id": self.item_id}
 
 
+
+#BOKK 要使用mongodb来写
 class Book(Base):  # TODO: to complete this table
     __tablename__ = "books"
     book_id = Column(String, nullable=False, primary_key=True)
@@ -88,6 +88,7 @@ class BookinStore(Base):
     store_id = Column(String, ForeignKey("markets.store_id"),
                       nullable=False, primary_key=True)
     stock = Column(Integer, nullable=False)
+    pirce = Column(Integer, nullable=False)
     # book_info = Column(Class)  # TODO: 需要细化书籍信息，并且判断这个信息和book表中的是否冲突，面向范式编程
     CheckConstraint(stock >= 0)  # 初始库存，库存大于等于0
 
@@ -98,7 +99,7 @@ class Order(Base):
     price = Column(Integer, nullable=False)
     store_id = Column(String, ForeignKey("markets.store_id"))
     user_id = Column(String, ForeignKey("user_tbl.user_id"), nullable=False)
-    status = Column(bool, default=False)
+    status = Column(Integer, default=0) # 0代表待支付, 1代表已经支付 2代表超时 3代表已取消
     # 这里可能要改Class具体的实现形式-------------------------------------------------------------
     # book_id = Column(Class)
 

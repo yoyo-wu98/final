@@ -4,7 +4,6 @@ from flask import request
 from flask import jsonify
 from flask import current_app
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flask_httpauth import HTTPTokenAuth
 import functools
 
 # 数据库操作部分
@@ -24,7 +23,7 @@ from ini_db import db
 # engin = create_engine('mysql+pymysql://root:Zhj2323864743@127.0.0.1:3306/final')
 # DBsession = sessionmaker(bind=engin)
 
-bp = Blueprint("mul", __name__, url_prefix="/auth")
+bp = Blueprint("mul", __name__, url_prefix="/db.auth")
 
 
 
@@ -211,7 +210,7 @@ def doChangePassword(user_id, oldPasswd, newPasswd):
     session = db.DBsession()
     try:
 
-        user = session.query(db.auth).filter(
+        user = session.query(db.db.auth).filter(
             db.auth.user_id == user_id, db.auth.passwd == oldPasswd).first()
 
         user.passwd = newPasswd

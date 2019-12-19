@@ -70,7 +70,7 @@ Body:
     ],
     "id": "$book id$",
     "title": "$book title$",
-    "author": "$book author$",
+    "db.author": "$book db.author$",
     "publisher": "$book publisher$",
     "original_title": "$original title$",
     "translator": "translater",
@@ -79,7 +79,7 @@ Body:
     "price": 10,
     "binding": "平装",
     "isbn": "$isbn$",
-    "author_intro": "$author introduction$",
+    "db.author_intro": "$db.author introduction$",
     "book_intro": "$book introduction$",
     "content": "$chapter1 ...$"
   },
@@ -103,7 +103,7 @@ book_info类：
 | -------------- | ------ | ---------------- | ---------- |
 | id             | string | 书籍ID           | N          |
 | title          | string | 书籍题目         | N          |
-| author         | string | 作者             | Y          |
+| db.author         | string | 作者             | Y          |
 | publisher      | string | 出版社           | Y          |
 | original_title | string | 原书题目         | Y          |
 | translator     | string | 译者             | Y          |
@@ -112,7 +112,7 @@ book_info类：
 | price          | int    | 价格(以分为单位) | N          |
 | binding        | string | 装帧，精状/平装  | Y          |
 | isbn           | string | ISBN号           | Y          |
-| author_intro   | string | 作者简介         | Y          |
+| db.author_intro   | string | 作者简介         | Y          |
 | book_intro     | string | 书籍简介         | Y          |
 | content        | string | 样章试读         | Y          |
 | tags           | array  | 标签             | Y          |

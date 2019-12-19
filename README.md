@@ -106,7 +106,7 @@ bookstore
     (
         id TEXT primary key,
         title TEXT,
-        author TEXT,
+        db.author TEXT,
         publisher TEXT,
         original_title TEXT,
         translator TEXT,
@@ -116,7 +116,7 @@ bookstore
         currency_unit TEXT,
         binding TEXT,
         isbn TEXT,
-        author_intro TEXT,
+        db.author_intro TEXT,
         book_intro text,
         content TEXT,
         tags TEXT,

@@ -8,7 +8,9 @@ from sqlalchemy import Column, String, Integer, ForeignKey, create_engine, Prima
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from .ini_db import db
+from ini_db import db
+import db.auth
+
 
 # 注：标注有很长的-------------------------------的地方说明还需要修改
 
@@ -20,15 +22,6 @@ from .ini_db import db
 
 
 bp = Blueprint("buyer", __name__, url_prefix="/buyer")
-
-
-# class order(Base):
-#     __tablename__ = "order"
-#     order_id = Column(String(40), primary_key=True)
-#     user_id = Column(String(40))
-#     store_id = Column(String(40))
-#     # 这里可能要改Class具体的实现形式-------------------------------------------------------------
-#     books = Column(Class)
 
 
 @bp.route("/new_order", methods=['POST'])
@@ -81,7 +74,7 @@ def do_pay(user_id, order_id, password):
             market.price += 1
             the_value = the_value_one * i.count
             the_sum += the_value
-        the_user = sessiom.query(auth).filter(auth.user_id=user_id)
+        the_user = sessiom.query(db.auth).filter(db.auth.user_id=user_id)
         has_money = the_user.money
         if the_sum > has_money:
             code = 501
@@ -119,8 +112,18 @@ def add_funds():
         json_data = json.load(data.decode("utf-8"))
         user_id = json_data.get("user_id")
         add_value = json_data.get("add_value")
-    code, msg, order_id = do_add_funds(user_id, add_value)
-    return jsonify({"code": code, "msg": msg, "order_id": order_id})
+        token = request.headers["token"]
+        #判断token是否过期或者错误:
+        verified = db.auth.verify_token(user_id,token)
+        #token正确:
+        if verified:
+            code, msg = do_add_funds(user_id, add_value)
+            return jsonify({"code": code, "msg": msg})
+        #token错误,返回报错
+        else:
+            code = 401
+            msg = "token过期"
+            return jsonify({"code": code, "msg": msg})
 
 
 def do_add_funds(user_id, add_value):
@@ -129,8 +132,7 @@ def do_add_funds(user_id, add_value):
         code = 501
         msg = "无效参数"
         return code, msg
-    # 这里需要加上token判断是否授权失败-------------------------------------------------------------
-    the_user = sessiom.query(auth).filter(auth.user_id=user_id)
+    the_user = sessiom.query(db.auth).filter(db.auth.user_id=user_id).first()
     the_user.money += add_value
     code = 200
     msg = "充值成功"
