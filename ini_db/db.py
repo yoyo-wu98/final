@@ -24,7 +24,7 @@ from itsdangerous import SignatureExpired
 from itsdangerous import BadSignature
 
 # 设置的相关属性
-from .. import conf
+from conf import conf
 
 Base = declarative_base()
 

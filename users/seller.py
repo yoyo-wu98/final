@@ -11,11 +11,11 @@ from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 import datetime
 
-from ..ini_db import db
-from .. import Auth as auth
-from .. import config
+from ini_db import db
+import auth
+from conf import conf
 
-bp = Blueprint("seller", __name__, url_prefix="/seller")
+seller = Blueprint("seller", __name__, url_prefix="/seller")
 
 
 '''
