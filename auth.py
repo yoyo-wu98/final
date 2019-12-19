@@ -16,6 +16,7 @@ import sqlalchemy
 from itsdangerous import SignatureExpired
 from itsdangerous import BadSignature
 from .ini_db import db
+from .. import conf
 
 # Base = declarative_base()
 
@@ -42,7 +43,7 @@ def createToken(user_id):
     '''
     # 生成一个6min内都有效的token
     MAX_TOKEN_AGE = 3600
-    token_generator = Serializer("secret", expires_in=MAX_TOKEN_AGE)
+    token_generator = Serializer(conf.token_key, expires_in=MAX_TOKEN_AGE)
     token = token_generator.dumps({"user_id": user_id})
     return token
 
