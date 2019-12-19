@@ -15,8 +15,9 @@ from sqlalchemy.ext.declarative import declarative_base
 import sqlalchemy
 from itsdangerous import SignatureExpired
 from itsdangerous import BadSignature
-from .ini_db import db
-from .. import conf
+from conf import conf
+from ini_db import db
+
 
 # Base = declarative_base()
 
@@ -25,14 +26,6 @@ from .. import conf
 
 bp = Blueprint("mul", __name__, url_prefix="/auth")
 
-
-# class auth(Base):
-#     __tablename__ = "user_tbl"
-
-#     user_id = Column(String(40),primary_key=True)
-#     passwd = Column(String(40))
-#     money = Column(Integer)
-#     terminal = Column(String(30))
 
 
 def createToken(user_id):
@@ -65,7 +58,7 @@ def verify_token(user_id, token):
     if user.token == "":
         session.close()
         return False
-    s = Serializer("secret", expires_in=3600)
+    s = Serializer(conf.token_key, expires_in=3600)
     # 判断是否过期或者错误
     try:
         s.loads(token)

@@ -24,7 +24,7 @@ from itsdangerous import SignatureExpired
 from itsdangerous import BadSignature
 
 # 设置的相关属性
-from .. import conf
+from conf import conf
 
 Base = declarative_base()
 
@@ -136,12 +136,8 @@ def initDB():
         myclient = pymongo.MongoClient('mongodb://localhost:27017/')
         global mydb
         mydb = myclient["test"]
-        global users_col
-        users_col = mydb["users"]
-        global items_col
-        items_col = mydb["items"]
-        global market_col
-        market_col = mydb["market"]
+        global book_inf
+        book_inf = mydb["book_inf"]
     except ZeroDivisionError as e:
         print('Error occurs:', e)
     finally:
