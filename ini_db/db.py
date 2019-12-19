@@ -131,14 +131,44 @@ def initDB():
         finally:
             print(engine)
             print("connected")
-    try:
-        global myclient
+    try:  # TODO： 加入pymongo的部分，用于存储book_inf
+        app.config.update(
+            MONGO_URI='mongodb://localhost:27017/flask',
+            MONGO_USERNAME='bjhee',
+            MONGO_PASSWORD='111111',
+            MONGO_TEST_URI='mongodb://localhost:27017/test'
+        )
+        mongo = pymongo(app)
+        mongo_test = PyMongo(app, config_prefix='MONGO_TEST')
+
+        # global myclient
+
         myclient = pymongo.MongoClient('mongodb://localhost:27017/')
-        global mydb
+        # dblist = myclient.list_database_names()
+    #     if(db_name in dblist):
+    #         log = "DB server "+db_name+" exists"
+    #         return log, True
+    #     else:
+    #         print("DB server "+db_name+" not exists")
+    #         if(db_name != "test" and db_name != "final"):
+    #             re = "DB server " + db_name + " is not necessary."
+    #             print(re)
+    #             return re, False
+    #         try:
+    #             print("try initialize the db "+db_name+"...")
+    #             mydb = myclient[db_name]
+    #         except ZeroDivisionError as e:
+    #             print('Error occurs:', e)
+    #             return e, False
+    #         finally:
+    #             log = 'DB server ' + db_name + ' initialized successfully.'
+    #             return log, True
+
+    #     global mydb
         mydb = myclient["test"]
-        global book_inf
+    #     global book_inf
         book_inf = mydb["book_inf"]
-    except ZeroDivisionError as e:
-        print('Error occurs:', e)
-    finally:
-        print("mongodb connected")
+    # except ZeroDivisionError as e:
+    #     print('Error occurs:', e)
+    # finally:
+    #     print("mongodb connected")
