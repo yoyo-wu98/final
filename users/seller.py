@@ -27,11 +27,13 @@ seller = Blueprint("seller", __name__, url_prefix="/seller")
 
 @seller.route("/create_store", methods=['POST'])
 def create_market():
-    if auth.verify_token() == False:
-        return 401, "登陆失败。"  # TODO: 需要修改，等一波邹哥哥的函数
     if request.method == 'POST':
+        token = request.headers["token"]
         user_id = request.json.get("user_id")
         store_id = request.json.get("store_id")
+
+        if auth.verify_token(user_id, token) == False:
+            return 401, "登陆失败，用户id或token错误。"  # TODO: 需要修改，等一波邹哥哥的函数
 
         if user_id == "" or store_id == "":
             return jsonify({"code": 502, "message": "参数错误，user_id和store_id不能为空。"})
@@ -90,13 +92,16 @@ def add_market(user_id, store_id):
 # TODO: Need to initialize the book table
 @seller.route("/add_book", methods=['POST'])  # TODO: 需要重新考虑很多东西
 def add_book():
-    if auth.verify_token() == False:
-        return 401, "登陆失败。"  # TODO: 需要修改，等一波邹哥哥的函数
     if request.method == 'POST':
+        token = request.headers["token"]
+
         user_id = request.json.get("user_id")
         store_id = request.json.get("store_id")
         book_id = request.json.get("id")
         stock_level = request.json.get("stock_level")
+
+        if auth.verify_token(user_id, token) == False:
+            return 401, "登陆失败，用户id或token错误。"
 
         if user_id == "" or store_id == "" or book_id == "":
             return jsonify({"code": 502, "message": "参数错误，user_id和store_id不能为空。"})
@@ -168,10 +173,16 @@ def add_stock_level():
     if auth.verify_token() == False:
         return 401, "登陆失败。"  # TODO: 需要修改，等一波邹哥哥的函数
     if request.method == 'POST':
+
+        token = request.headers["token"]
+
         user_id = request.json.get("user_id")
         store_id = request.json.get("store_id")
         book_id = request.json.get("book_id")
         add_stock_level = request.json.get("add_stock_level")
+
+        if auth.verify_token(user_id, token) == False:
+            return 401, "登陆失败，用户id或token错误。"
 
         if user_id == "" or store_id == "" or book_id == "" or add_stock_level == "":
             return jsonify({"code": 502, "message": "参数错误，user_id和store_id不能为空。"})
