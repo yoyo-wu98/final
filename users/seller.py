@@ -15,7 +15,7 @@ from ..ini_db import db
 from .. import Auth as auth
 from .. import config
 
-bp = Blueprint("seller", __name__, url_prefix="/seller")
+seller = Blueprint("seller", __name__, url_prefix="/seller")
 
 
 '''
