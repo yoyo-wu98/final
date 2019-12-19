@@ -12,3 +12,5 @@ db_name = "final"
 # demo_db_arg = conf.db_env_sql + "+" + conf.db_env_api + "://" + conf.db_username + ":" + \
 #     conf.db_user_passwd + "@" + conf.db_ip + \
 #     ":" + conf.db_port + "/" + conf.db_name
+
+token_key = "secret"

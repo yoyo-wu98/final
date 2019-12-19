@@ -7,12 +7,16 @@ from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask_httpauth import HTTPTokenAuth
 
 # 数据库操作部分
+# # SQL
 from sqlalchemy import Column, String, Integer, ForeignKey, create_engine, PrimaryKeyConstraint, and_
 from sqlalchemy.sql.schema import CheckConstraint
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
+
+# # MongoDB
+import pymongo
 
 # 异常处理部分
 import sqlalchemy
@@ -102,11 +106,9 @@ class Order(Base):
         return "order_id: %s,\n\t price: %d, starter_id: %s, store_id:%s, status: %d" % (
             self.order_id, self.price, self.user_id, self.store_id, self.status)
 
-
-# order_id TEXT, book_id TEXT, count INTEGER, price INTEGER,  "
-# "PRIMARY KEY(order_id, book_id))"
-
 # TODO: whether is there any need to construct a new table to store order-book
+
+
 class OrderDetail(Base):
     __tablename__ = "order_details"
     order_id = Column(String, ForeignKey("orders.order_id"),
@@ -114,7 +116,6 @@ class OrderDetail(Base):
     book_id = Column(String, ForeignKey("books.book_id"),
                      nullable=False, primary_key=True)
     count = Column(Integer, nullable=False)
-    price = Column(Integer, nullable=False)
     # store_id = Column(String, ForeignKey("markets.store_id"))
     # user_id = Column(String, ForeignKey("user_tbl.user_id"), nullable=False)
     # status = Column(bool, default=False)
@@ -130,3 +131,18 @@ def initDB():
         finally:
             print(engine)
             print("connected")
+    try:
+        global myclient
+        myclient = pymongo.MongoClient('mongodb://localhost:27017/')
+        global mydb
+        mydb = myclient["test"]
+        global users_col
+        users_col = mydb["users"]
+        global items_col
+        items_col = mydb["items"]
+        global market_col
+        market_col = mydb["market"]
+    except ZeroDivisionError as e:
+        print('Error occurs:', e)
+    finally:
+        print("mongodb connected")

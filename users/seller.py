@@ -77,7 +77,6 @@ def add_market(user_id, store_id):
         session.close()
         return 401, "发生错误: " + e
     finally:
-        session.commit()
         session.close()
         code, msg = find_market(user_id, store_id)
         if code == 200:
@@ -105,6 +104,11 @@ def add_book():
             user_id=user_id, store_id=store_id)  # TODO: 检查是DB不存在还是DB不属于user
         if code == 500:
             return jsonify({"code": 501, "message": "商铺ID：" + store_id + "不属于用户：" + user_id})
+        elif code == 401:
+            return jsonify({"code": code, "message": msg})
+        elif code != 200:
+            return jsonify({"code": 509, "message": "参数错误，验证商铺是否存在时返回未知参数。"})
+
         code, msg = find_book_in_store(book_id=book_id, store_id=store_id)
         if code == 200:
             return jsonify({"code": 501, "message": "商铺ID：" + store_id + "已有图书：" + book_id + "，建议改成增加库存函数add_stock。"})
@@ -148,13 +152,12 @@ def add_book_to_store(book_id, store_id, stock):
         session.close()
         return 401, "发生错误: " + e
     finally:
-        session.commit()
         session.close()
-        code, msg = find_market(user_id, store_id)
+        code, msg = find_book_in_store(book_id, store_id)
         if code == 200:
             return code, "在店铺：{}增加图书：{}成功".format(store_id, book_id)
         elif code == 500:
-            return code, "创建店铺失败，在add_book_store部分发生错误。"
+            return code, "创建店铺失败，在add_book_to_store部分发生错误。"
         else:
             return code, msg
 
@@ -175,12 +178,17 @@ def add_stock_level():
         code, msg = find_market(user_id=user_id, store_id=store_id)
         if code == 500:
             return jsonify({"code": 501, "message": "商铺ID：" + store_id + "不属于用户：" + user_id})
+        elif code == 401:
+            return jsonify({"code": code, "message": msg})
+        elif code != 200:
+            return jsonify({"code": 509, "message": "参数错误，验证商铺是否存在时返回未知参数。"})
+
         code, msg = find_book_in_store(book_id=book_id, store_id=store_id)
         if code == 500:
             return jsonify({"code": 501, "message": "商铺ID：" + store_id + "没有图书：" + book_id + "在售，建议改成增加图书函数add_book。"})
         elif code == 401:
             return jsonify({"code": code, "message": msg})
-        elif code != 500:
+        elif code != 200:
             return jsonify({"code": 509, "message": "参数错误，验证商铺是否拥有图书时返回未知参数。"})
 
         # 执行插入请求
@@ -189,41 +197,24 @@ def add_stock_level():
         return jsonify({"code": code, "message": msg})
 
 
-def find_book_stock(book_id, store_id):  # TODO: 修改判断：是否这个商店有了这本书
-    element = None
-    session = db.DBsession()
-    try:
-        element = session.query(db.BookinStore).filter(
-            db.BookinStore.book_id == book_id, db.BookinStore.store_id == store_id).one()
-        session.close()
-    except ZeroDivisionError as e:
-        print("发生错误: ", e)
-        return 401, "发生错误: " + e
-    finally:
-        if element != None:
-            return 200, element  # what the fuck
-        else:
-            return 500, "店铺" + store_id + "没有此书" + book_id + "销售。"
-
-
 def add_up_book_stock(book_id, store_id, add_stock_level):
     session = db.DBsession()
-    newcolumn = db.BookinStore(
-        book_id=book_id, store_id=store_id)
+    element = session.query(db.BookinStore).filter(
+        db.BookinStore.book_id == book_id, db.BookinStore.store_id == store_id).one()
+    original_stock = element.stock
     try:
-        session.add(newcolumn)
+        element.stock = original_stock + add_stock_level
         session.commit()
     except ZeroDivisionError as e:
         session.rollback()
         session.close()
         return 401, "发生错误: " + e
     finally:
-        session.commit()
+        element = session.query(db.BookinStore).filter(
+            db.BookinStore.book_id == book_id, db.BookinStore.store_id == store_id).one()
+        new_stock = element.stock
         session.close()
-        code, msg = find_market(user_id, store_id)
-        if code == 200:
-            return code, "在店铺：{}增加图书：{}成功".format(store_id, book_id)
-        elif code == 500:
-            return code, "创建店铺失败，在add_book_store部分发生错误。"
+        if new_stock == original_stock + add_stock_level:
+            return 200, "在店铺：{}增加图书：{}库存成功".format(store_id, book_id)
         else:
-            return code, msg
+            return 401, "增加书本库存失败，在add_up_book_stock部分发生错误。"
