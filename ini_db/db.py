@@ -8,7 +8,8 @@ from flask_httpauth import HTTPTokenAuth
 
 # 数据库操作部分
 # # SQL
-from sqlalchemy import Column, String, Integer, Binary, ForeignKey, create_engine, PrimaryKeyConstraint, and_
+from sqlalchemy import Column, String, Integer, Binary, ForeignKey, \
+    create_engine, PrimaryKeyConstraint, and_
 from sqlalchemy.sql.schema import CheckConstraint
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.orm import sessionmaker
