@@ -7,11 +7,12 @@ from sqlalchemy.sql.schema import CheckConstraint
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.session import sessionmaker
-from sqlalchemy_utils import database_exists, create_database
+
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 import datetime
 
 from ini_db import db
+
 from . import auth
 from conf import conf
 
@@ -170,8 +171,6 @@ def add_book_to_store(book_id, store_id, stock):
 # TODO: Need to initialize the book table
 @seller.route("/add_stock_level", methods=['POST'])  # TODO: 需要重新考虑很多东西
 def add_stock_level():
-    if auth.verify_token() == False:
-        return 401, "登陆失败。"  # TODO: 需要修改，等一波邹哥哥的函数
     if request.method == 'POST':
 
         token = request.headers["token"]
