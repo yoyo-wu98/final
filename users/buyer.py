@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from ini_db import db
-import db.auth
+import auth
 
 
 # 注：标注有很长的-------------------------------的地方说明还需要修改
@@ -58,9 +58,13 @@ def do_order(user_id, store_id, books):
 
 def do_pay(user_id, order_id, password):
     session = DBsession()
+    token = request.headers["token"]
+    verified = auth.verify_token(user_id, token)
+    if not verified:
+        
     # 这里需要加上token判断是否授权失败-------------------------------------------------------------
     try:
-        the_order = session.query(order).filter(order.order_id=order_id)
+        the_order = session.query(db.order).filter(db.order.order_id=order_id)
     except:
         code = 502
         msg = "无效参数"
@@ -69,8 +73,8 @@ def do_pay(user_id, order_id, password):
     else:
         the_sum = 0
         for i in the_order.books:
-            the_store = session.query(order).filter(order.order_id=order_id).first().store_id
-            the_value_one = session.query(market).filter(market.store_id=the_store, market.id=i.id).price  # 单个价钱\
+            the_store = session.query(db.order).filter(order.order_id=order_id).first().store_id
+            the_value_one = session.query(db.market).filter(market.store_id=the_store, market.id=i.id).price  # 单个价钱\
             market.price += 1
             the_value = the_value_one * i.count
             the_sum += the_value
@@ -99,8 +103,14 @@ def payment():
         user_id = json_data.get("user_id")
         order_id = json_data.get("order_id")
         password = json_data.get("password")
-    do_pay(user_id, order_id)
-    return jsonify({"code": code, "msg": msg})
+        token = request.headers["token"]
+        verified = auth.verify_token[user_id,token]
+        if verified:
+            code, msg = do_pay(user_id, order_id)
+        else :
+            code = 401
+            msg = "token错误"
+        return jsonify({"code": code, "msg": msg})
 
 
 @bp.route("/add_funds", methods=['POST'])
@@ -114,16 +124,15 @@ def add_funds():
         add_value = json_data.get("add_value")
         token = request.headers["token"]
         #判断token是否过期或者错误:
-        verified = db.auth.verify_token(user_id,token)
+        verified = auth.verify_token(user_id,token)
         #token正确:
         if verified:
             code, msg = do_add_funds(user_id, add_value)
-            return jsonify({"code": code, "msg": msg})
         #token错误,返回报错
         else:
             code = 401
             msg = "token过期"
-            return jsonify({"code": code, "msg": msg})
+        return jsonify({"code": code, "msg": msg})
 
 
 def do_add_funds(user_id, add_value):
