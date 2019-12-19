@@ -12,7 +12,7 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP
 import datetime
 
 from ini_db import db
-import auth
+from . import auth
 from conf import conf
 
 seller = Blueprint("seller", __name__, url_prefix="/seller")

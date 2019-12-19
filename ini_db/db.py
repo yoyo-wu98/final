@@ -8,7 +8,7 @@ from flask_httpauth import HTTPTokenAuth
 
 # 数据库操作部分
 # # SQL
-from sqlalchemy import Column, String, Integer, ForeignKey, create_engine, PrimaryKeyConstraint, and_
+from sqlalchemy import Column, String, Integer, Binary, ForeignKey, create_engine, PrimaryKeyConstraint, and_
 from sqlalchemy.sql.schema import CheckConstraint
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.orm import sessionmaker
@@ -29,20 +29,26 @@ from conf import conf
 Base = declarative_base()
 
 engine = create_engine(
-    "{}+{}://{}:{}@{}:{}/{}".format(conf.db_env_sql,
-                                    conf.db_env_api,
-                                    conf.db_username,
-                                    conf.db_user_passwd,
-                                    conf.db_ip,
-                                    conf.db_port,
-                                    conf.db_name))
+    "{}+{}://{}:{}@{}:{}/{}".format(conf.db_sql_env_sql,
+                                    conf.db_sql_env_api,
+                                    conf.db_sql_username,
+                                    conf.db_sql_user_passwd,
+                                    conf.db_sql_ip,
+                                    conf.db_sql_port,
+                                    conf.db_sql_name))
 DBsession = sessionmaker(bind=engine)
 
 session_ = DBsession()
 
-# bp = Blueprint("mul", __name__, url_prefix="/auth")
+# MongoDb - order
 
-# myauth = HTTPTokenAuth()
+client = pymongo.MongoClient(
+    host=conf.db_mongodb_ip, port=conf.db_mongodb_port)
+db_auth = client.admin
+db_auth.authenticate(conf.db_mongodb_username,
+                     conf.db_mongodb_user_passwd)
+db = client[conf.db_mongodb_name]
+order = db["orders"]
 
 
 class auth(Base):
@@ -67,7 +73,7 @@ class Market(Base):
     # __dict__ = {"owner_name": owner_name, "item_id": item_id}
 
     def __repr__(self):
-        return "store_id: %d, user_id: %d" % (
+        return "store_id: %s, user_id: %s" % (
             self.store_id, self.user_id)
 
     # def __init__(self, item_id, owner_name):
@@ -79,6 +85,27 @@ class Market(Base):
 class Book(Base):  # TODO: to complete this table
     __tablename__ = "books"
     book_id = Column(String, nullable=False, primary_key=True)
+    title = Column(String, index=True)
+    author = Column(String)
+    publisher = Column(String)
+    original_title = Column(String)
+    translator = Column(String),
+    pub_year = Column(String),
+    pages = Column(String),
+    recommended_price = Column(Integer, nullable=False),
+    currency_unit = Column(String),
+    binding = Column(String),
+    isbn = Column(String),
+    author_intro = Column(String),
+    book_intro = Column(String),
+    content = Column(String),
+    tags = Column(String),
+    picture = Column(Binary)
+
+    # def __repr__(self):
+    #     return "book_id: %s, title: %s" % (
+    #         self.store_id, self.user_id)
+    # TODO: 继续完成book类的represent函数
 
 
 class BookinStore(Base):
@@ -92,33 +119,33 @@ class BookinStore(Base):
     CheckConstraint(stock >= 0)  # 初始库存，库存大于等于0
 
 
-class Order(Base):
-    __tablename__ = "orders"
-    order_id = Column(String, nullable=False, primary_key=True)
-    price = Column(Integer, nullable=False)
-    store_id = Column(String, ForeignKey("markets.store_id"))
-    user_id = Column(String, ForeignKey("user_tbl.user_id"), nullable=False)
-    status = Column(bool, default=False)
-    # 这里可能要改Class具体的实现形式-------------------------------------------------------------
-    # book_id = Column(Class)
+# class Order(Base):
+#     __tablename__ = "orders"
+#     order_id = Column(String, nullable=False, primary_key=True)
+#     price = Column(Integer, nullable=False)
+#     store_id = Column(String, ForeignKey("markets.store_id"))
+#     user_id = Column(String, ForeignKey("user_tbl.user_id"), nullable=False)
+#     status = Column(bool, default=False)
+#     # 这里可能要改Class具体的实现形式-------------------------------------------------------------
+#     # book_id = Column(Class)
 
-    def __repr__(self):
-        return "order_id: %s,\n\t price: %d, starter_id: %s, store_id:%s, status: %d" % (
-            self.order_id, self.price, self.user_id, self.store_id, self.status)
+#     def __repr__(self):
+#         return "order_id: %s,\n\t price: %d, starter_id: %s, store_id:%s, status: %d" % (
+#             self.order_id, self.price, self.user_id, self.store_id, self.status)
 
-# TODO: whether is there any need to construct a new table to store order-book
+# # TODO: whether is there any need to construct a new table to store order-book
 
 
-class OrderDetail(Base):
-    __tablename__ = "order_details"
-    order_id = Column(String, ForeignKey("orders.order_id"),
-                      nullable=False, primary_key=True)
-    book_id = Column(String, ForeignKey("books.book_id"),
-                     nullable=False, primary_key=True)
-    count = Column(Integer, nullable=False)
-    # store_id = Column(String, ForeignKey("markets.store_id"))
-    # user_id = Column(String, ForeignKey("user_tbl.user_id"), nullable=False)
-    # status = Column(bool, default=False)
+# class OrderDetail(Base):
+#     __tablename__ = "order_details"
+#     order_id = Column(String, ForeignKey("orders.order_id"),
+#                       nullable=False, primary_key=True)
+#     book_id = Column(String, ForeignKey("books.book_id"),
+#                      nullable=False, primary_key=True)
+#     count = Column(Integer, nullable=False)
+#     # store_id = Column(String, ForeignKey("markets.store_id"))
+#     # user_id = Column(String, ForeignKey("user_tbl.user_id"), nullable=False)
+#     # status = Column(bool, default=False)
 
 
 def initDB():
@@ -131,44 +158,3 @@ def initDB():
         finally:
             print(engine)
             print("connected")
-    try:  # TODO： 加入pymongo的部分，用于存储book_inf
-        app.config.update(
-            MONGO_URI='mongodb://localhost:27017/flask',
-            MONGO_USERNAME='bjhee',
-            MONGO_PASSWORD='111111',
-            MONGO_TEST_URI='mongodb://localhost:27017/test'
-        )
-        mongo = pymongo(app)
-        mongo_test = PyMongo(app, config_prefix='MONGO_TEST')
-
-        # global myclient
-
-        myclient = pymongo.MongoClient('mongodb://localhost:27017/')
-        # dblist = myclient.list_database_names()
-    #     if(db_name in dblist):
-    #         log = "DB server "+db_name+" exists"
-    #         return log, True
-    #     else:
-    #         print("DB server "+db_name+" not exists")
-    #         if(db_name != "test" and db_name != "final"):
-    #             re = "DB server " + db_name + " is not necessary."
-    #             print(re)
-    #             return re, False
-    #         try:
-    #             print("try initialize the db "+db_name+"...")
-    #             mydb = myclient[db_name]
-    #         except ZeroDivisionError as e:
-    #             print('Error occurs:', e)
-    #             return e, False
-    #         finally:
-    #             log = 'DB server ' + db_name + ' initialized successfully.'
-    #             return log, True
-
-    #     global mydb
-        mydb = myclient["test"]
-    #     global book_inf
-        book_inf = mydb["book_inf"]
-    # except ZeroDivisionError as e:
-    #     print('Error occurs:', e)
-    # finally:
-    #     print("mongodb connected")
