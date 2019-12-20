@@ -42,13 +42,40 @@ def do_order(user_id, store_id, books):
     session = DBsession()
 
     order_id = time.strftime("%d/%m/%Y  %H:%M:%S")
-    the_order = order(order_id=order_id, user_id=user_id,
-                      store_id=store_id, books=books)
+
     # 用当前时间作为ID，不可能重复
+    sum = 0
     try:
-        session.add(the_order)
+        the_user = sessiom.query(db.auth).filter(db.auth.user_id=user_id).one()
     except:
-        # 这里需要加上4个expect，或者改成if-else-------------------------------------------------------------
+        code = 501
+        msg = "买家用户ID不存在"
+        session.close()
+        return code, msg
+    try:
+        the_store = session.query(db.Market).filter(db.Market.store_id=store_id).one()
+    except:
+        code = 502
+        msg = "商铺ID不存在"
+        session.close()
+        return code, msg
+    try:
+        for i in books:
+            the_book = session.query(db.BookinStore).filter(db.BookinStore.store_id=store_id, db.BookinStore.book_id = i.id).one()
+            if(i.count > the_book.stock):
+                code = 504
+                msg = "商品库存不足"
+                session.close()
+                return code, msg
+            sum += i.count * the_book.price
+    except:
+        code = 503
+        msg = "购买的图书不存在"
+        session.close()
+        return code, msg
+    the_order = order(order_id=order_id, user_id=user_id,
+                      store_id=store_id, books=books,sum = sum)#----------------------------------------------使用mongodb形式重写
+    session.add(the_order)
     code = 200
     msg = "下单成功"
     session.commit()
@@ -58,13 +85,8 @@ def do_order(user_id, store_id, books):
 
 def do_pay(user_id, order_id, password):
     session = DBsession()
-    token = request.headers["token"]
-    verified = auth.verify_token(user_id, token)
-    if not verified:
-
-        # 这里需要加上token判断是否授权失败-------------------------------------------------------------
     try:
-        the_order = session.query(db.order).filter(db.order.order_id=order_id)
+        the_order = session.query(db.order).filter(db.order.order_id=order_id).one
     except:
         code = 502
         msg = "无效参数"
