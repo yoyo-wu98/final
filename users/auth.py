@@ -11,6 +11,7 @@ import functools
 from sqlalchemy import Column, String, Integer, ForeignKey, create_engine, PrimaryKeyConstraint, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy_fulltext import FullText, FullTextSearch
 # 异常处理部分
 import sqlalchemy
 from itsdangerous import SignatureExpired
@@ -265,3 +266,59 @@ def doLogout(user_id):
     session.commit()
     session.close()
     return code, msg
+
+
+# 查询，输入json：
+# where：查询的域 （title:标题；author:作者；）
+# content：查询信息
+# return 查询结果
+# TODO:结果分页
+
+@bp.route("/search", methods=['POST'])
+def search():
+    if request.method == 'POST':
+        option = request.json.get("where")
+        keyword = request.json.get("content")
+
+        if keyword == "" or option == "":
+            return jsonify({"code": 502, "message": "参数错误，查询域where与查询内容content不能为空。"})
+
+        if option == "title":
+            words = keyword.split()
+            rule = and_(*[db.Book.title.like(w) for w in words])
+            result = db.Book.query.filter(rule)
+            if result != "":
+                return jsonify({"code": 200, "message": result})
+        elif option == "author":
+            words = keyword.split()
+            rule = and_(*[db.Book.author.like(w) for w in words])
+            result = db.Book.query.filter(rule)
+            if result != "":
+                return jsonify({"code": 200, "message": result})
+        elif option == "publisher":
+            words = keyword.split()
+            rule = and_(*[db.Book.author.like(w) for w in words])
+            result = db.Book.query.filter(rule)
+            if result != "":
+                return jsonify({"code": 200, "message": result})
+        elif option == "author_intro":
+            session = db.DBsession()
+            result = session.query(db.Book).filter(
+                FullTextSearch('author_intro', db.Book))
+            if result != "":
+                return jsonify({"code": 200, "message": result})
+        elif option == "book_intro":
+            session = db.DBsession()
+            result = session.query(db.Book).filter(
+                FullTextSearch('book_intro', db.Book))
+            if result != "":
+                return jsonify({"code": 200, "message": result})
+        elif option == "content":
+            session = db.DBsession()
+            result = session.query(db.Book).filter(
+                FullTextSearch('content', db.Book))
+            if result != "":
+                return jsonify({"code": 200, "message": result})
+        else:
+            return jsonify({"code": 502, "message": "参数错误，查询域where不适宜查询。"})
+        return jsonify({"code": 501, "message": "查询不到结果。"})
