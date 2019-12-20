@@ -87,6 +87,8 @@ class Market(Base):
 
 # BOOK 要使用mongodb来写picture的部分，mongodb的大文本存储并没有mysql高效，但是不在这里用就没地方用了。（手动狗头
 # 全文索引没用的话就用这个网站里的 https://www.jb51.net/article/64453.htm ； 不支持中文的话： https://blog.csdn.net/yygg329405/article/details/97110984
+# 再不济：https://github.com/mengzhuo/sqlalchemy-fulltext-search
+# 中文的支持还不怎么样，可能需要改一点初始化的schema才能用
 class Book(FullText, Base):  # TODO: to complete this table
     __tablename__ = "books"
     __fulltext_columns__ = ('book_intro', 'author_intro', 'content')
