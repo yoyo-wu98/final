@@ -19,6 +19,10 @@ from sqlalchemy_utils import create_database, database_exists
 # # MongoDB
 import pymongo
 
+# 全文索引
+from sqlalchemy_fulltext import FullText, FullTextSearch
+
+
 # 异常处理部分
 import sqlalchemy
 from itsdangerous import SignatureExpired
@@ -82,12 +86,16 @@ class Market(Base):
     # 	self.__dict__ = {"owner_name": self.owner_name, "item_id": self.item_id}
 
 
-# BOKK 要使用mongodb来写
-class Book(Base):  # TODO: to complete this table
+# BOOK 要使用mongodb来写picture的部分，mongodb的大文本存储并没有mysql高效，但是不在这里用就没地方用了。（手动狗头
+# 全文索引没用的话就用这个网站里的 https://www.jb51.net/article/64453.htm ； 不支持中文的话： https://blog.csdn.net/yygg329405/article/details/97110984
+# 再不济：https://github.com/mengzhuo/sqlalchemy-fulltext-search
+# 中文的支持还不怎么样，可能需要改一点初始化的schema才能用
+class Book(FullText, Base):  # TODO: to complete this table
     __tablename__ = "books"
+    __fulltext_columns__ = ('book_intro', 'author_intro', 'content')
     book_id = Column(String, nullable=False, primary_key=True)
     title = Column(String, index=True)
-    author = Column(String)
+    author = Column(String, index=True)
     publisher = Column(String)
     original_title = Column(String)
     translator = Column(String),
@@ -100,7 +108,7 @@ class Book(Base):  # TODO: to complete this table
     author_intro = Column(String),
     book_intro = Column(String),
     content = Column(String),
-    tags = Column(String),
+    tags = Column(String, index=True),
     picture = Column(Binary)
 
     # def __repr__(self):
