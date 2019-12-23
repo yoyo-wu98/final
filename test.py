@@ -1,3 +1,7 @@
 import time
+a =time.time()
 
-print(time.strftime("%d/%m/%Y  %H:%M:%S"))
+time.sleep(10)
+
+b = time.time()
+print(int(a)-int(b))

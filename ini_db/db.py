@@ -14,6 +14,8 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
+from sqlalchemy_utils import create_database, database_exists
+
 # # MongoDB
 import pymongo
 
@@ -37,18 +39,17 @@ engine = create_engine(
                                     conf.db_sql_name))
 DBsession = sessionmaker(bind=engine)
 
-session_ = DBsession()
 
 # MongoDb - order
 
 client = pymongo.MongoClient(
     host=conf.db_mongodb_ip, port=conf.db_mongodb_port)
 db_auth = client.admin
-db_auth.authenticate(conf.db_mongodb_username,
-                     conf.db_mongodb_user_passwd)
+# db_auth.authenticate(conf.db_mongodb_username,
+#                      conf.db_mongodb_user_passwd)
 db = client[conf.db_mongodb_name]
-order = db["orders"]
-
+order = db[conf.db_order_collection]
+orderToCheck = db[conf.db_check_collection]
 
 class auth(Base):
     __tablename__ = "user_tbl"
@@ -115,10 +116,17 @@ class BookinStore(Base):
     store_id = Column(String, ForeignKey("markets.store_id"),
                       nullable=False, primary_key=True)
     stock = Column(Integer, nullable=False)
-    pirce = Column(Integer, nullable=False)
+    price = Column(Integer, nullable=False)
     # book_info = Column(Class)  # TODO: 需要细化书籍信息，并且判断这个信息和book表中的是否冲突，面向范式编程
     CheckConstraint(stock >= 0)  # 初始库存，库存大于等于0
 
+
+class Order(Base):
+    __tablename__ = "order"
+    order_id = Column(String, primary_key = True)
+    user_id = Column(String, ForeignKey("auth.user_id"))
+    price = Column(Integer,nullable=False)
+    status = Column(Integer, nullable=False)
 
 # class Order(Base):
 #     __tablename__ = "orders"

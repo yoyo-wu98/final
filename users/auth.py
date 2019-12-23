@@ -4,7 +4,6 @@ from flask import request
 from flask import jsonify
 from flask import current_app
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flask_httpauth import HTTPTokenAuth
 import functools
 
 # 数据库操作部分
@@ -160,6 +159,7 @@ def login():
         terminal = request.json.get("terminal")
         code, msg, token = doLogin(user_id, password)
         return jsonify({"code": code, "msg": msg, "token": token})
+
 
 
 def doLogin(user_id, password):
