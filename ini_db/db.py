@@ -151,13 +151,27 @@ class BookinStore(Base):
     # book_info = Column(Class)  # TODO: 需要细化书籍信息，并且判断这个信息和book表中的是否冲突，面向范式编程
     CheckConstraint(stock >= 0)  # 初始库存，库存大于等于0
 
+class Order(base):
+    __tablename__ = 'order'
+    order_id = Column(String(40),primary_key=True)
+    buyer_id = Column(String(40))
+    store_id = Column(String(40))
+    price = Column(Float)
+    status = Column(Integer)
 
-class Order(Base):
-    __tablename__="order"
-    order_id=Column(String, primary_key=True)
-    user_id=Column(String, ForeignKey("auth.user_id"))
-    price=Column(Integer, nullable=False)
-    status=Column(Integer, nullable=False)
+    def __init__(self, order_id, buyer_id, store_id, price):
+        self.order_id = order_id
+        self.buyer_id = buyer_id
+        self.store_id = store_id
+        self.price = price
+        self.status = 0
+
+# class Order(Base):
+#     __tablename__="order"
+#     order_id=Column(String, primary_key=True)
+#     user_id=Column(String, ForeignKey("auth.user_id"))
+#     price=Column(Integer, nullable=False)
+#     status=Column(Integer, nullable=False)
 
 # class Order(Base):
 #     __tablename__ = "orders"

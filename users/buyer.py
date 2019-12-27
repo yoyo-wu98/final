@@ -27,21 +27,6 @@ session = db.DBsession()
 bp = Blueprint("buyer", __name__, url_prefix="/buyer")
 
 
-class Order(base):
-    __tablename__ = 'Order'
-    order_id = Column(String(40),primary_key=True)
-    buyer_id = Column(String(40))
-    store_id = Column(String(40))
-    price = Column(Float)
-    status = Column(Integer)
-
-    def __init__(self, order_id, buyer_id, store_id, price):
-        self.order_id = order_id
-        self.buyer_id = buyer_id
-        self.store_id = store_id
-        self.price = price
-        self.status = 0
-
 
 @bp.route("/new_order", methods=['POST'])
 # 下单
@@ -91,7 +76,7 @@ def do_order(user_id, store_id, books):
         return code, msg
     
     #增加一个SQL表存储订单信息
-    temp = Order(order_id, user_id, store_id, theSum)
+    temp = db.order(order_id, user_id, store_id, theSum)
     session.add(temp)
 
     '''
@@ -240,7 +225,7 @@ def doCancel(user_id,order_id):
     #     }
     # myDoc = db.order.find_one(myQuery)
 
-    myDoc = session.query(db.order).filter(db.order.order_id==order_id, db.user_id == user_id).one
+    myDoc = session.query(db.order).filter(db.order.order_id==order_id, db.user_id == user_id).first()
 
     if myDoc is None:
         code = 401
