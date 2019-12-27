@@ -1,4 +1,8 @@
 {
+<<<<<<< HEAD
     "python.pythonPath": "C:\\Users\\wushu\\AppData\\Local\\Programs\\Python\\Python37\\python.exe",
     "python.formatting.provider": "autopep8"
+=======
+    "python.pythonPath": "C:\\ProgramData\\Anaconda3\\python.exe"
+>>>>>>> a5fab10439c2c98cbc0f7969b155312ede5a93b3
 }

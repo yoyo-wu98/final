@@ -27,6 +27,22 @@ session = db.DBsession()
 bp = Blueprint("buyer", __name__, url_prefix="/buyer")
 
 
+class Order(base):
+    __tablename__ = 'Order'
+    order_id = Column(String(40),primary_key=True)
+    buyer_id = Column(String(40))
+    store_id = Column(String(40))
+    price = Column(Float)
+    status = Column(Integer)
+
+    def __init__(self, order_id, buyer_id, store_id, price):
+        self.order_id = order_id
+        self.buyer_id = buyer_id
+        self.store_id = store_id
+        self.price = price
+        self.status = 0
+
+
 @bp.route("/new_order", methods=['POST'])
 # 下单
 def new_order():
@@ -74,6 +90,9 @@ def do_order(user_id, store_id, books):
         session.close()
         return code, msg
     
+    #增加一个SQL表存储订单信息
+    temp = Order(order_id, user_id, store_id, theSum)
+    session.add(temp)
 
     '''
     创建新的订单
@@ -215,19 +234,25 @@ def doCancel(user_id,order_id):
         2.2如果是2或3，订单已经发出，返回失败
         2.3其他情况则说明订单已经被取消，返回失败
     '''
-    myQuery = {
-            "order_id": order_id,
-            "user_id":user_id
-        }
-    myDoc = db.order.find_one(myQuery)
+    # myQuery = {
+    #         "order_id": order_id,
+    #         "user_id":user_id
+    #     }
+    # myDoc = db.order.find_one(myQuery)
+
+    myDoc = session.query(db.order).filter(db.order.order_id==order_id, db.user_id == user_id).one
+
     if myDoc is None:
         code = 401
         msg = "用户名或订单号错误"
     else:
-        status = myDoc["status"]
+        # status = myDoc["status"]
+        status = myDoc.status
         if status==0 or status==1:
-            action = {"$set":{"status":-2}}
-            db.order.update_one(myQuery,action)
+            # action = {"$set":{"status":-2}}
+            # db.order.update_one(myQuery,action)
+            status = -2
+            session.commit()
             code = 200
             msg = "取消订单成功"
         elif status==2 or status==3:
