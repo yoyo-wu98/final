@@ -1,1 +1,3 @@
 SQLAlchemy-FullText-Search
+pymysql
+sshtunnel

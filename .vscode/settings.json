@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "/home/hjzou/anaconda3/bin/python"
+    "python.pythonPath": "C:\\Users\\wushu\\AppData\\Local\\Programs\\Python\\Python37\\python.exe",
+    "python.formatting.provider": "autopep8"
 }

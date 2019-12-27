@@ -1,7 +1,8 @@
-from ini_db import  db
+from ini_db import db
 from conf import conf
 
-def insertOneOrder(order_id,store_id,user_id,books,amount,status):
+
+def insertOneOrder(order_id, store_id, user_id, books, amount, status):
     '''
     在mongoDB中插入一个新的文档
         "order_id" :  订单号
@@ -13,15 +14,16 @@ def insertOneOrder(order_id,store_id,user_id,books,amount,status):
         "createTime" : 这条订单创建的时间的时间戳
     '''
     newDict = {
-        "order_id" : order_id,
-        "store_id" : store_id,
+        "order_id": order_id,
+        "store_id": store_id,
         "user_id": user_id,
-        "books" : books,
-        "amount" : amount,   
-        "status" : status,
+        "books": books,
+        "amount": amount,
+        "status": status,
     }
     db.order.insert_one(newDict)
     return
+
 
 def insertOneOderToCheck(order_id, endTime):
     '''
@@ -29,14 +31,14 @@ def insertOneOderToCheck(order_id, endTime):
      "endTime" : 订单结束时间的时间戳
     '''
     newDict = {
-        "order_id" : order_id,
-        "endTime" : endTime
+        "order_id": order_id,
+        "endTime": endTime
     }
     db.orderToCheck.insert_one(newDict)
     return
-        
-            
-def calTimeStamp( startTimeStamp):
+
+
+def calTimeStamp(startTimeStamp):
     '''
     计算时间差：
     timeDiff：时间差，单位为s
@@ -44,5 +46,3 @@ def calTimeStamp( startTimeStamp):
     '''
     timeDiff = conf.timeDiff
     return startTimeStamp+timeDiff
-
-
