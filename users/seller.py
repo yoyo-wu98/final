@@ -12,6 +12,7 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP
 import datetime
 
 from ini_db import db
+from ini_db.db import session
 
 from . import auth
 from conf import conf
@@ -53,11 +54,11 @@ def create_market():
 
 def find_market(user_id, store_id):
     element = None
-    session = db.DBsession()
+    # session = db.DBsession()
     try:
         element = session.query(db.Market).filter(
             db.Market.user_id == user_id, db.Market.store_id == store_id).one()
-        session.close()
+        # session.close()
     except ZeroDivisionError as e:
         print("发生错误: ", e)
         return 401, "发生错误: " + e
@@ -69,7 +70,7 @@ def find_market(user_id, store_id):
 
 
 def add_market(user_id, store_id):
-    session = db.DBsession()
+    # session = db.DBsession()
     newcolumn = db.Market(
         user_id=user_id, store_id=store_id)
     try:
@@ -77,10 +78,10 @@ def add_market(user_id, store_id):
         session.commit()
     except ZeroDivisionError as e:
         session.rollback()
-        session.close()
+        # session.close()
         return 401, "发生错误: " + e
     finally:
-        session.close()
+        # session.close()
         code, msg = find_market(user_id, store_id)
         if code == 200:
             return code, "创建商铺成功"
@@ -131,11 +132,11 @@ def add_book():
 
 def find_book_in_store(book_id, store_id):  # TODO: 修改判断：是否这个商店有了这本书
     element = None
-    session = db.DBsession()
+    # session = db.DBsession()
     try:
         element = session.query(db.BookinStore).filter(
             db.BookinStore.book_id == book_id, db.BookinStore.store_id == store_id).one()
-        session.close()
+        # session.close()
     except ZeroDivisionError as e:
         print("发生错误: ", e)
         return 401, "发生错误: " + e
@@ -147,7 +148,7 @@ def find_book_in_store(book_id, store_id):  # TODO: 修改判断：是否这个�
 
 
 def add_book_to_store(book_id, store_id, stock):
-    session = db.DBsession()
+    # session = db.DBsession()
     newcolumn = db.BookinStore(
         book_id=book_id, store_id=store_id)
     try:
@@ -155,10 +156,10 @@ def add_book_to_store(book_id, store_id, stock):
         session.commit()
     except ZeroDivisionError as e:
         session.rollback()
-        session.close()
+        # session.close()
         return 401, "发生错误: " + e
     finally:
-        session.close()
+        # session.close()
         code, msg = find_book_in_store(book_id, store_id)
         if code == 200:
             return code, "在店铺：{}增加图书：{}成功".format(store_id, book_id)
@@ -208,7 +209,7 @@ def add_stock_level():
 
 
 def add_up_book_stock(book_id, store_id, add_stock_level):
-    session = db.DBsession()
+    # session = db.DBsession()
     element = session.query(db.BookinStore).filter(
         db.BookinStore.book_id == book_id, db.BookinStore.store_id == store_id).one()
     original_stock = element.stock
@@ -217,13 +218,13 @@ def add_up_book_stock(book_id, store_id, add_stock_level):
         session.commit()
     except ZeroDivisionError as e:
         session.rollback()
-        session.close()
+        # session.close()
         return 401, "发生错误: " + e
     finally:
         element = session.query(db.BookinStore).filter(
             db.BookinStore.book_id == book_id, db.BookinStore.store_id == store_id).one()
         new_stock = element.stock
-        session.close()
+        # session.close()
         if new_stock == original_stock + add_stock_level:
             return 200, "在店铺：{}增加图书：{}库存成功".format(store_id, book_id)
         else:
