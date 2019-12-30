@@ -8,12 +8,11 @@ from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 # 数据库操作部分
 
 # # SSH
-from sshtunnel import SSHTunnelForwarder
 
 # # SQL
 from sqlalchemy import Column, String, Integer, Binary, ForeignKey, \
-    create_engine, PrimaryKeyConstraint, and_
-from sqlalchemy.sql.schema import CheckConstraint
+    create_engine, PrimaryKeyConstraint, and_,Float
+from sqlalchemy.sql.schema import CheckConstraint, Index
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -37,7 +36,9 @@ from conf import conf
 
 
 Base = declarative_base()
-
+def to_dict(self):
+    return {c.name : getattr(self, c.name, None) for c in self.__table__.columns}
+Base.to_dict = to_dict
 # with SSHTunnelForwarder(
 #     (conf.ssh_host, conf.ssh_port),  # Remote server IP and SSH port
 #     ssh_username=conf.ssh_user,
@@ -54,7 +55,7 @@ Base = declarative_base()
 #                                                                         conf.db_sql_port,
 #                                                                         conf.db_sql_name),
 #                            pool_recycle=1)
-engine = create_engine("mysql+pymysql://root:123456@127.0.0.1:3306/final?charset=utf8")
+engine = create_engine("mysql+pymysql://root:981119@127.0.0.1:3306/final?charset=utf8",pool_size=20)
 # engine = create_engine("{}+{}://{}:{}@{}:{}/{}?charset=utf8".format(conf.db_sql_env_sql,
                                                                     # conf.db_sql_env_api,
                                                                     # conf.db_sql_username,
@@ -64,17 +65,14 @@ engine = create_engine("mysql+pymysql://root:123456@127.0.0.1:3306/final?charset
                                                                     # conf.db_sql_name))
 
 DBsession=sessionmaker(bind=engine)
-
-
+session = DBsession()
 # MongoDb - order
 
 client=pymongo.MongoClient(
     host=conf.db_mongodb_ip, port=conf.db_mongodb_port)
 db_auth=client.admin
-# db_auth.authenticate(conf.db_mongodb_username,
-#                      conf.db_mongodb_user_passwd)
 db=client[conf.db_mongodb_name]
-order=db[conf.db_order_collection]
+mongo_order=db[conf.db_order_collection]
 orderToCheck=db[conf.db_check_collection]
 
 
@@ -94,9 +92,9 @@ class auth(Base):
 
 class Market(Base):
     __tablename__="markets"
-    user_id=Column(String, ForeignKey(
-        'users.username'), nullable=False)
+    user_id=Column(String, nullable=False)
     store_id=Column(String, nullable=False, primary_key=True, index=True)
+    rank = Column(Integer)
     # __dict__ = {"owner_name": owner_name, "item_id": item_id}
 
     def __repr__(self):
@@ -114,57 +112,56 @@ class Market(Base):
 # 再不济：https://github.com/mengzhuo/sqlalchemy-fulltext-search
 # 中文的支持还不怎么样，可能需要改一点初始化的schema才能用
 class Book(FullText, Base):  # TODO: to complete this table
-    __tablename__="books"
+    __tablename__="book"
     __fulltext_columns__=('book_intro', 'author_intro', 'content')
-    book_id=Column(String, nullable=False, primary_key=True)
+    id=Column(String, nullable=False, primary_key=True)
     title=Column(String, index=True)
     author=Column(String, index=True)
     publisher=Column(String)
     original_title=Column(String)
-    translator=Column(String),
-    pub_year=Column(String),
-    pages=Column(String),
-    recommended_price=Column(Integer, nullable=False),
-    currency_unit=Column(String),
-    binding=Column(String),
-    isbn=Column(String),
-    author_intro=Column(String),
-    book_intro=Column(String),
-    content=Column(String),
-    tags=Column(String, index=True),
+    translator=Column(String)
+    pub_year=Column(String)
+    pages=Column(String)
+    price=Column(Integer, nullable=False)
+    currency_unit=Column(String)
+    binding=Column(String)
+    isbn=Column(String)
+    author_intro=Column(String)
+    book_intro=Column(String)
+    content=Column(String)
+    tags=Column(String, index=True)
     picture=Column(Binary)
+    Index("book_intro", mysql_prefix="FULLTEXT",mysql_with_parser="n-gram")
+    Index("author_intro", mysql_prefix="FULLTEXT",mysql_with_parser="n-gram")
+    Index("content", mysql_prefix="FULLTEXT",mysql_with_parser="n-gram")
 
     # def __repr__(self):
-    #     return "book_id: %s, title: %s" % (
+    #     return "bsession = db.DBsession()ook_id: %s, title: %s" % (
     #         self.store_id, self.user_id)
     # TODO: 继续完成book类的represent函数
 
 
 class BookinStore(Base):
     __tablename__="bookinstore"
-    book_id=Column(String, ForeignKey("books.book_id"),
+    book_id=Column(String,
                      nullable=False, primary_key=True)
-    store_id=Column(String, ForeignKey("markets.store_id"),
+    store_id=Column(String,
                       nullable=False, primary_key=True)
-    stock=Column(Integer, nullable=False)
-    price=Column(Integer, nullable=False)
+    stock=Column(Integer, nullable=False,default=0)
+    price=Column(Integer, nullable=False,default=0)
+    sales = Column(Integer)
     # book_info = Column(Class)  # TODO: 需要细化书籍信息，并且判断这个信息和book表中的是否冲突，面向范式编程
     CheckConstraint(stock >= 0)  # 初始库存，库存大于等于0
 
-class Order(base):
-    __tablename__ = 'order'
-    order_id = Column(String(40),primary_key=True)
-    buyer_id = Column(String(40))
-    store_id = Column(String(40))
+class order(Base):
+    __tablename__ = 'order_tbl'
+    order_id = Column(String,primary_key=True,)
+    user_id = Column(String)
+    store_id = Column(String)
     price = Column(Float)
     status = Column(Integer)
 
-    def __init__(self, order_id, buyer_id, store_id, price):
-        self.order_id = order_id
-        self.buyer_id = buyer_id
-        self.store_id = store_id
-        self.price = price
-        self.status = 0
+
 
 # class Order(Base):
 #     __tablename__="order"
