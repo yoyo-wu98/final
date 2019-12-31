@@ -15,8 +15,15 @@ from sqlalchemy_fulltext import FullText, FullTextSearch
 import sqlalchemy
 from itsdangerous import SignatureExpired
 from itsdangerous import BadSignature
+from sqlalchemy.exc import IntegrityError
 from conf import conf
 from ini_db import db
+from ini_db.db import session
+
+from users.tools import getStoreId
+from users.tools import getResult
+
+
 
 
 # Base = declarative_base()
@@ -46,16 +53,12 @@ def verify_token(user_id, token):
     2.其次检查token是否为空,如果为空,则说明已经登出
     3.随后检验token的正确性和已经是否过期
     '''
-
-    session = db.DBsession()
     user = session.query(db.auth).filter(db.auth.user_id == user_id).first()
     # user id是否出错
     if user is None:
-        session.close()
         return False
     # 是否已经登出
     if user.token == "":
-        session.close()
         return False
     s = Serializer(conf.token_key, expires_in=3600)
     # 判断是否过期或者错误
@@ -69,6 +72,7 @@ def verify_token(user_id, token):
         return False
     return True
 
+
 # 登陆函数路由
 @bp.route("/register", methods=['POST'])
 def register():
@@ -78,7 +82,8 @@ def register():
         password = request.json.get("password")
         # 执行插入请求
         code, msg = doRigister(user_id=user_id, password=password)
-        return jsonify({"code": code, "message": msg})
+
+        return jsonify({ "message": msg}),code
 
 
 def doRigister(user_id, password):
@@ -95,23 +100,21 @@ def doRigister(user_id, password):
         code = 101
         msg = "用户名或密码为空"
         return code, msg
-
-    session = db.DBsession()
     newUser = db.auth(user_id=user_id, passwd=password, money=0)
 
     try:
         # 向数据控发送回话,commit必须加在try中,因为这一步是真正意义上的修改数据库
-
         session.add(newUser)
-    except:
-        code = 501
+        session.commit()
+    except :
+        session.rollback()
+        code = 502
         msg = "注册失败,用户名重复"
-        session.close()
+        # session.close()
         return code, msg
     code = 200
     msg = "注册成功"
-    session.commit()
-    session.close()
+    # session.close()
     return code, msg
 
 # 注销用户路由
@@ -122,7 +125,7 @@ def unregister():
         user_id = request.json.get("user_id")
         password = request.json.get("password")
         code, msg = doUnregister(user_id, password)
-        return jsonify({"code": code, "message": msg})
+        return jsonify({"code": code, "message": msg}),code
 
 
 def doUnregister(user_id, password):
@@ -134,16 +137,15 @@ def doUnregister(user_id, password):
     '''
     session = db.DBsession()
     try:
-
         user = session.query(db.auth).filter(
             db.auth.user_id == user_id, db.auth.passwd == password).first()
-
         session.delete(user)
         session.commit()
     except sqlalchemy.orm.exc.UnmappedInstanceError:
+        session.rollback()
         code = 401
         msg = "注销失败，用户名不存在或密码不正确"
-        session.close()
+        # session.close()
         return code, msg
     else:
         code = 200
@@ -159,7 +161,7 @@ def login():
         password = request.json.get("password")
         terminal = request.json.get("terminal")
         code, msg, token = doLogin(user_id, password)
-        return jsonify({"code": code, "msg": msg, "token": token})
+        return jsonify({"code": code, "msg": msg, "token": token}),code
 
 
 
@@ -171,14 +173,14 @@ def doLogin(user_id, password):
     2. 有, 返回200并显示成功,创建相应token,并且在后端存储token
     '''
 
-    session = db.DBsession()
+    # session = db.DBsession()
     user = session.query(db.auth).filter(
         db.auth.user_id == user_id, db.auth.passwd == password).first()
 
     if user is None:
         code = 401
         msg = "登陆失败,用户名或密码错误"
-        session.close()
+        # session.close()
         return code, msg, None
     else:
         code = 200
@@ -186,7 +188,7 @@ def doLogin(user_id, password):
         token = createToken(user_id=user_id)
         user.token = token
         session.commit()
-        session.close()
+        # session.close()
         return code, msg, token
 
 
@@ -198,7 +200,7 @@ def password():
         oldPassword = request.json.get("oldPassword")
         newPassword = request.json.get("newPassword")
         code, msg = doChangePassword(user_id, oldPassword, newPassword)
-        return jsonify({"code": code, "msg": msg})
+        return jsonify({"code": code, "msg": msg}),code
 
 
 def doChangePassword(user_id, oldPasswd, newPasswd):
@@ -208,7 +210,7 @@ def doChangePassword(user_id, oldPasswd, newPasswd):
     1.匹配且存在:直接修改,返回200和成功信息
     2.不满足条件:返回401和报错信息
     '''
-    session = db.DBsession()
+    # session = db.DBsession()
     try:
 
         user = session.query(db.auth).filter(
@@ -217,15 +219,15 @@ def doChangePassword(user_id, oldPasswd, newPasswd):
         user.passwd = newPasswd
         session.commit()
     except AttributeError:
-        session.close()
+        # session.close()
+        session.rollback()
         code = 401
         msg = "更改密码失败,用户名或密码错误"
         return code, msg
-    else:
-        code = 200
-        msg = "更改密码成功"
-        session.close()
-        return code, msg
+    code = 200
+    msg = "更改密码成功"
+        # session.close()
+    return code, msg
 
 # 用户登出的路由
 
@@ -251,7 +253,7 @@ def logout():
         else:
             code = 401
             msg = "登出失败,用户名或者token错误"
-        return jsonify({"code": code, "message": msg})
+        return jsonify({"code": code, "message": msg}),code
 
 
 def doLogout(user_id):
@@ -259,12 +261,17 @@ def doLogout(user_id):
     code = 200
     msg = "登出成功"
 
-    session = db.DBsession()
-    user = session.query(db.auth).filter(db.auth.user_id == user_id).first()
-
-    user.token = ""
-    session.commit()
-    session.close()
+    # session = db.DBsession()
+    try:
+        user = session.query(db.auth).filter(db.auth.user_id == user_id).first()
+        user.token = ""
+        session.commit()
+    except:
+        session.rollback()
+        code=401
+        msg= "用户名错误"
+        return code, msg
+    # session.close()
     return code, msg
 
 
@@ -274,6 +281,9 @@ def doLogout(user_id):
 # return 查询结果
 # TODO:结果分页
 
+
+
+
 @bp.route("/search", methods=['POST'])
 def search():
     if request.method == 'POST':
@@ -282,43 +292,58 @@ def search():
 
         if keyword == "" or option == "":
             return jsonify({"code": 502, "message": "参数错误，查询域where与查询内容content不能为空。"})
-
         if option == "title":
             words = keyword.split()
-            rule = and_(*[db.Book.title.like(w) for w in words])
-            result = db.Book.query.filter(rule)
-            if result != "":
-                return jsonify({"code": 200, "message": result})
+            rule = and_(*[db.Book.title.like('%{keyword}%'.format(keyword=w)) for w in words])
+            result = session.query(db.Book).filter(rule).all()
+            if result != None:
+                code = 200
+                result = getResult(result)
+                msg = getStoreId(result)
+                return jsonify({"msg":msg}),code
         elif option == "author":
             words = keyword.split()
-            rule = and_(*[db.Book.author.like(w) for w in words])
-            result = db.Book.query.filter(rule)
-            if result != "":
-                return jsonify({"code": 200, "message": result})
+            rule = and_(*[db.Book.author.like('%{keyword}%'.format(keyword=w)) for w in words])
+            result = session.query(db.Book).filter(rule).all()
+            
+            if result != None:
+                code = 200
+                msg = getStoreId(result)
+                return jsonify({"msg":msg}),code
         elif option == "publisher":
             words = keyword.split()
-            rule = and_(*[db.Book.author.like(w) for w in words])
-            result = db.Book.query.filter(rule)
-            if result != "":
-                return jsonify({"code": 200, "message": result})
+            rule = and_(*[db.Book.publisher.like('%{keyword}%'.format(keyword=w)) for w in words])
+            result = session.query(db.Book).filter(rule).all()
+            if result != None:
+                code = 200
+                msg = getStoreId(result)
+                return jsonify({"msg":msg}),code
         elif option == "author_intro":
-            session = db.DBsession()
+            # session = db.DBsession()
             result = session.query(db.Book).filter(
-                FullTextSearch('author_intro', db.Book))
+                FullTextSearch('author_intro', db.Book)).all()
             if result != "":
-                return jsonify({"code": 200, "message": result})
+                code = 200
+                msg = getStoreId(result)
+                return jsonify({"msg":msg}),code
         elif option == "book_intro":
-            session = db.DBsession()
+            # session = db.DBsession()
             result = session.query(db.Book).filter(
-                FullTextSearch('book_intro', db.Book))
-            if result != "":
-                return jsonify({"code": 200, "message": result})
+                FullTextSearch('book_intro', db.Book)).all()
+            if result != None:
+                code = 200
+                msg = getStoreId(result)
+                return jsonify({"msg":msg}),code
         elif option == "content":
-            session = db.DBsession()
+            # session = db.DBsession()
             result = session.query(db.Book).filter(
-                FullTextSearch('content', db.Book))
-            if result != "":
-                return jsonify({"code": 200, "message": result})
+                FullTextSearch('content', db.Book)).all()
+            if result != None:
+                code = 200
+                msg = getStoreId(result)
+                return jsonify({"msg":msg}),code
         else:
-            return jsonify({"code": 502, "message": "参数错误，查询域where不适宜查询。"})
-        return jsonify({"code": 501, "message": "查询不到结果。"})
+            code = 502
+            return jsonify({ "message": "参数错误，查询域where不适宜查询。"}),code
+        code = 501
+        return jsonify({"code": 501, "message": "查询不到结果。"}),code
